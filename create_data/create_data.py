@@ -9,6 +9,26 @@ import re
 import os
 import time
 
+# Create necessary directories if they do not exist: "csv_rawdata/" and "csv_lemmatization_added/"
+if 'csv_rawdata' not in os.listdir(path='.'):
+    os.mkdir(path='./csv_rawdata')
+if 'csv_lemmatization_added' not in os.listdir(path='.'):
+    os.mkdir(path='./csv_lemmatization_added')
+
+def parent_directory() -> str:
+    """Get the parent directory for handling csv files.
+
+    Returns:
+        string: the path to the directory where directories for csv files are located
+    """
+    #create relative path for parent
+    relative_parent = os.path.join(os.getcwd(), '.')
+
+    #use abspath for absolute parent path
+    return str(os.path.abspath(relative_parent)).replace('\\', '/')
+
+parent_directory_str = parent_directory()
+
 def get_list_of_csv_online():
     """_summary_
 
@@ -46,7 +66,7 @@ def get_csv_file(file_name):
     Returns:
         _type_: _description_
     """
-    output_folder = 'C:/Users/OMISTAJA/python_projects/parlamenttisampo_haku_lemmatisointi/csv_rawdata'
+    output_folder = parent_directory_str+'/csv_rawdata'
     
     try:
         if file_name not in os.listdir(output_folder):
@@ -142,17 +162,17 @@ def extract_lemmatized_pos(string: str) -> str:
 
 # apply extract_lemmatized() and extract_lemmatized_pos() functions to df
 
-for csv_file in os.listdir('C:/Users/OMISTAJA/python_projects/parlamenttisampo_haku_lemmatisointi/csv_rawdata'):
+for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
     # if file already has been created -> skip everything
     # otherwise get the data and create it
-    if csv_file in os.listdir('C:/Users/OMISTAJA/python_projects/parlamenttisampo_haku_lemmatisointi/csv_lemmatization_added'):
+    if csv_file in os.listdir(parent_directory_str+'/csv_lemmatization_added'):
         # do nothing
         print(f'{csv_file} already in directory. Skipping.')
         pass
     else:
         # do everything
-        file_path_write = f'C:/Users/OMISTAJA/python_projects/parlamenttisampo_haku_lemmatisointi/csv_lemmatization_added/{csv_file}'
-        file_path_read = f'C:/Users/OMISTAJA/python_projects/parlamenttisampo_haku_lemmatisointi/csv_rawdata/{csv_file}'
+        file_path_write = f'{parent_directory_str}/csv_lemmatization_added/{csv_file}'
+        file_path_read = f'{parent_directory_str}/csv_rawdata/{csv_file}'
         i_file = pd.read_csv(file_path_read, sep=',', header=0, dtype=str)
 
         # get length of dataframe for progress monitoring
@@ -216,47 +236,3 @@ for csv_file in os.listdir('C:/Users/OMISTAJA/python_projects/parlamenttisampo_h
         except FileExistsError:
             os.remove(file_path_write)
             i_file.to_csv(file_path_write, sep=',', header=True, index=False)
-
-print(i_file.loc[i_file['content_full'].isna() == True])
-
-for i in os.listdir('C:/Users/OMISTAJA/python_projects/parlamenttisampo_haku_lemmatisointi/csv_rawdata')[5:8]:
-    print(i)
-
-for i in range(0, 10):
-    print(i)
-    time.sleep(0.3)
-
-hostname = socket.gethostname()
-IPAddr = socket.gethostbyname(hostname)
-print("Your Computer Name is:", hostname)
-print("Your Computer IP Address is:", IPAddr)
-
-print(f'{i_file}: extracting content_lemmatized')
-start_time = time.time()
-try:
-    i_file['content_lemmatized'] = i_file['content_full'].apply(extract_lemmatized)
-except Exception as e:
-    print(f'{csv_file}: Error at applying extract_lemmatized: {e}')
-    pass
-print(f'{i_file}: extracted content_lemmatized in {round(time.time()-start_time, 2)} seconds')
-
-print(f'{csv_file}: extracting content_lemmatized_pos')
-start_time = time.time()
-try:
-    i_file['content_lemmatized_pos'] = i_file['content_full'].apply(extract_lemmatized_pos)
-except:
-    print(f'{csv_file}: Error at applying extract_lemmatized_pos: {e}')
-print(f'{csv_file}: extracted content_lemmatized_pos in {round(time.time()-start_time, 2)} seconds')
-
-# drop unnecessary column 'content_full' from dataframe before saving
-i_file.drop('content_full', axis=1, inplace=True)
-
-# save enriched file
-try:
-    i_file.to_csv(file_path_write, sep=',', header=True, index=False)
-except FileExistsError:
-    os.remove(file_path_write)
-    i_file.to_csv(file_path_write, sep=',', header=True, index=False)
-
-print(os.getcwd())
-
