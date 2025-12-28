@@ -4,7 +4,6 @@
 
 import pandas as pd
 import requests
-import socket
 import re
 import os
 import time
