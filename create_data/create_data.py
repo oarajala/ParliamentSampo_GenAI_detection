@@ -159,6 +159,27 @@ def extract_lemmatized_pos(string: str) -> str:
     
     return lem_pos_content
 
+def extract_facet_electoral_term(string: str) -> str:
+    """Extract electoral term (vaalikausi) from full speech data retrieved from Parlamenttisampo service.
+
+    Args:
+        string (str): _description_
+
+    Returns:
+        str: _description_
+    """
+    if (string is not None) and ('portal:facet_electoral_term' in string):
+        fet_s = re.search('portal:facet_electoral_term', string).end()
+        fet_quote_s = re.search('\d', string[fet_s:]).end()            
+        fet_quote_s = (fet_s+fet_quote_s)-1
+        fet_quote_e = re.search(';', string[fet_quote_s:]).start()
+        fet_quote_e = fet_quote_s+fet_quote_e
+        fet_content = string[fet_quote_s:fet_quote_e]
+    else:
+        fet_content = None
+    
+    return fet_content   
+
 # apply extract_lemmatized() and extract_lemmatized_pos() functions to df
 
 for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
@@ -187,7 +208,7 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
         # only retrieve full text data and metadata in for loop
         # time for progress monitoring
         start_time = time.time()
-        for i, d in i_file.iterrows():
+        for i, d in i_file[:60].iterrows():
             # the url is in d.url -> store in a new variable for readability
             url_str = d.url
             try:
@@ -195,7 +216,6 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
                 if t.status_code == 200:
                     t_t = t.text
                     i_file.loc[i_file['url'] == url_str, 'content_full'] = t_t
-                    # a short break out of courtesy, no spamming the page unnecessarily
             except requests.exceptions.ConnectionError as e:
                 print(f"Error connecting to the server: {e} ; File name: {csv_file}")
             except requests.exceptions.HTTPError as e:
@@ -204,11 +224,23 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
                 print(f"An error occurred: {e}  ; File name: {csv_file}")
             finally:
                 # print info on progress
-                print(f'{csv_file}: retrieving data from Parlamenttisampo - {round(((i+1)/i_file_length)*100, 2)}%')
-                # courteous wait
-                time.sleep(0.3)
+                print(f'{csv_file}: retrieving data from Parlamenttisampo - {round(((i+1)/i_file_length)*100, 3)}%')
+                # a short break out of courtesy, no spamming the service unnecessarily
+                time.sleep(0.2)
         print(f'{csv_file}: retrieved content from Parlamenttisampo in {round(time.time()-start_time, 2)} seconds')
 
+        # extract all wanted extra information
+        ## electoral_term
+        print(f'{csv_file}: extracting electoral term')
+        start_time = time.time()
+        try:
+            i_file['electoral_term'] = i_file['content_full'].apply(extract_facet_electoral_term)
+        except Exception as e:
+            print(f'{csv_file}: Error at applying extract_facet_electoral_term: {e}')
+            pass
+        print(f'{csv_file}: extracted electoral_term in {round(time.time()-start_time, 2)} seconds')
+
+        ## content_lemmatized
         print(f'{csv_file}: extracting content_lemmatized')
         start_time = time.time()
         try:
@@ -218,6 +250,7 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
             pass
         print(f'{csv_file}: extracted content_lemmatized in {round(time.time()-start_time, 2)} seconds')
         
+        ## content_lemmatized_pos
         print(f'{csv_file}: extracting content_lemmatized_pos')
         start_time = time.time()
         try:
