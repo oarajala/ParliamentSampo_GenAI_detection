@@ -18,6 +18,10 @@ print(asd.columns)
 
 asd[['session', 'date', 'topic', 'speech_type', 'content']]
 
+print(asd)
+print(asd['url'].loc[asd['content_lemmatized'].notna() == True])
+print(asd['topic'].unique())
+
 print(len(set(asd['topic'].values)))
 
 for i in (set(asd['topic'].values)):
