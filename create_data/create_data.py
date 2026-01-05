@@ -170,7 +170,7 @@ def extract_facet_electoral_term(string: str) -> str:
     """
     if (string is not None) and ('portal:facet_electoral_term' in string):
         fet_s = re.search('portal:facet_electoral_term', string).end()
-        fet_quote_s = re.search('\d', string[fet_s:]).end()            
+        fet_quote_s = re.search(r'\d', string[fet_s:]).end()            
         fet_quote_s = (fet_s+fet_quote_s)-1
         fet_quote_e = re.search(';', string[fet_quote_s:]).start()
         fet_quote_e = fet_quote_s+fet_quote_e
@@ -208,7 +208,7 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
         # only retrieve full text data and metadata in for loop
         # time for progress monitoring
         start_time = time.time()
-        for i, d in i_file[:60].iterrows():
+        for i, d in i_file.iterrows():
             # the url is in d.url -> store in a new variable for readability
             url_str = d.url
             try:
