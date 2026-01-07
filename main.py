@@ -9,55 +9,6 @@ from scipy import stats
 #import matplotlib.pyplot as plt
 from utils import helpers, langtools
 
-# Analysis limited to time where lemmatized texts are available.
-
-directory = helpers.get_parent_directory()
-
-asd = pd.read_csv(directory+'/csv_lemmatization_added/speeches_2024.csv', sep=',', header=0)
-
-print(asd.columns)
-
-asd[['session', 'date', 'topic', 'speech_type', 'content']]
-
-print(asd['link'])
-print(asd['url'].loc[asd['content_lemmatized'].notna() == True])
-print(asd['topic'].unique())
-
-for i in asd['topic'].unique():
-    if ('SUULLINEN KYSYMYS' not in i.upper() and 'HALLITUKSEN ESITYS' not in i.upper()):
-        print(i)
-
-print(asd['electoral_term'].loc[asd['electoral_term'].notna()==True])
-
-print(len(set(asd['topic'].values)))
-
-for i in (set(asd['topic'].values)):
-    print(i)
-
-# test helpers.calculate_electoral_term_progression
-print(asd[['date', 'electoral_term']])
-
-asd['electoral_term_progression'] = asd.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)
-
-print(asd[['date', 'electoral_term', 'electoral_term_progression']])
-
-
-# TEST - read ai_release_timeline.csv -- works 20260105
-csv = pd.read_csv(f'{directory}/ai_release_timeline.csv', header=0, encoding='utf-8', sep=';')
-
-print(asd['content'])
-
-asd['words'] = asd.apply(lambda x: langtools.extract_words(x['content']), axis=1)
-
-print(asd[['content', 'words']])
-
-asd['sentences'] = asd.apply(lambda x: langtools.extract_sentences(x['content']), axis=1)
-
-print(asd[['content', 'sentences']])
-
-for i in asd['words'][:10]:
-    print(i)
-
 # test run
 
 directory = helpers.get_parent_directory()
@@ -129,8 +80,42 @@ for csv in os.listdir(f'{directory}/csv_analysis/'):
     word_frequency_combined_df = pd.concat([word_frequency_combined_df, df], axis=0, ignore_index=True)
 
 # let's build a df for the words in combined df's 2025 words and their z-scores per year
+# --> second try to speed things up
+start_time = time.time()
 comparison_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]])
+errors = 0
+error_words = []
+for word in [word for word in word_frequency_combined_df['word'][:1000].unique()]:
+    try:
+        word_df = word_frequency_combined_df.loc[word_frequency_combined_df['word'] == word]
+        values_list = [word, *helpers.list_z_score_per_df_year(word_df, comparison_df.columns)]
 
+
+        #comparison_df2.loc[len(comparison_df2), 'word'] = word
+        comparison_df = pd.concat([comparison_df, pd.DataFrame(data=[values_list], columns=comparison_df.columns)], 
+                                axis=0, ignore_index=True)
+    except Exception:
+        errors = errors+1
+        error_words.append(word)
+        print(f'Error at word: {word}')
+        pass
+
+# checkpoint save
+save_file_name = 'word_z_score_all_years.csv'
+if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
+    os.remove(f'{directory}/csv_analysis/{save_file_name}')
+comparison_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
+print(f'{save_file_name}: file created and saved in {round(time.time()-start_time, 2)} seconds')
+
+# # #
+# # #
+# # #
+
+print(word_frequency_combined_df.loc[word_frequency_combined_df['word']=='ravi'])
+
+# let's build a df for the words in combined df's 2025 words and their z-scores per year
+# SKIP SKIP SKIP TAKES AGES!!!
+comparison_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]])
 for i, d in word_frequency_combined_df.iterrows():
     if d.word not in comparison_df['word']:
         comparison_df.loc[len(comparison_df), 'word'] = d.word
@@ -139,12 +124,7 @@ for i, d in word_frequency_combined_df.iterrows():
     else:
         col_val = f'z_{d.year}'
         comparison_df.loc[comparison_df['word'] == d.word, col_val] = d.z_per_year
-
 print(comparison_df)
-
-# # #
-# # #
-# # #
 
 df = pd.read_csv(f'{directory}/csv_analysis/word_frequcy_per_year_2010.csv', sep=';', encoding='utf-8', header=0)
 
@@ -169,3 +149,52 @@ print(year_csv['electoral_term'].unique())
 #print(word_frequency_dict)
 #print(word_frequecy_per_year_df[['word', 'n']])
 #print(pd.DataFrame.from_dict(data=word_frequency_dict, columns=['n'], orient='index'))
+
+# Analysis limited to time where lemmatized texts are available.
+
+directory = helpers.get_parent_directory()
+
+asd = pd.read_csv(directory+'/csv_lemmatization_added/speeches_2024.csv', sep=',', header=0)
+
+print(asd.columns)
+
+asd[['session', 'date', 'topic', 'speech_type', 'content']]
+
+print(asd['link'])
+print(asd['url'].loc[asd['content_lemmatized'].notna() == True])
+print(asd['topic'].unique())
+
+for i in asd['topic'].unique():
+    if ('SUULLINEN KYSYMYS' not in i.upper() and 'HALLITUKSEN ESITYS' not in i.upper()):
+        print(i)
+
+print(asd['electoral_term'].loc[asd['electoral_term'].notna()==True])
+
+print(len(set(asd['topic'].values)))
+
+for i in (set(asd['topic'].values)):
+    print(i)
+
+# test helpers.calculate_electoral_term_progression
+print(asd[['date', 'electoral_term']])
+
+asd['electoral_term_progression'] = asd.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)
+
+print(asd[['date', 'electoral_term', 'electoral_term_progression']])
+
+
+# TEST - read ai_release_timeline.csv -- works 20260105
+csv = pd.read_csv(f'{directory}/ai_release_timeline.csv', header=0, encoding='utf-8', sep=';')
+
+print(asd['content'])
+
+asd['words'] = asd.apply(lambda x: langtools.extract_words(x['content']), axis=1)
+
+print(asd[['content', 'words']])
+
+asd['sentences'] = asd.apply(lambda x: langtools.extract_sentences(x['content']), axis=1)
+
+print(asd[['content', 'sentences']])
+
+for i in asd['words'][:10]:
+    print(i)

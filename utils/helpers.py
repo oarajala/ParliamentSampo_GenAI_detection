@@ -1,5 +1,7 @@
 import os
 from datetime import timedelta, datetime, date
+import re
+import pandas as pd
 
 def get_parent_directory() -> str:
     """Get the parent directory for handling csv files.
@@ -42,3 +44,27 @@ def calculate_electoral_term_progression(date: str, electoral_term: str) -> int:
         progression = int(round((days_serverd_from_total_et/et_length)*100, 0))
 
         return progression
+    
+def list_z_score_per_df_year(df: pd.DataFrame, df_cols: list) -> list:
+    """Eats a df and a list of column names. Creates a list of values for an easy row concatenation (transposition) into another df.
+    Inserts None as value for differences in transposable data and column list.
+    Used for transposing/pivoting data into wide format from long lists of z-scores.
+    """
+    cols_list = [re.search(r'\d+', i)[0] for i in df_cols if re.search(r'\d+', i) is not None]
+    df_years_list = [str(i) for i in df['year'].values]
+    differences = [i for i in cols_list if i not in df_years_list]
+    if len(differences)>0:
+        [df_years_list.append(i) for i in differences]
+    df_years_list = sorted(df_years_list)
+
+    try:
+        values_list_out = []
+        for i in df_years_list:
+            if i in differences:
+                values_list_out.append(None)
+            else:
+                values_list_out.append(df['z_per_year'].loc[df['year'] == int(i)].array[0])
+    except Exception:
+        raise
+    
+    return values_list_out
