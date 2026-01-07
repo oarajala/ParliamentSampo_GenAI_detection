@@ -4,6 +4,7 @@ import socket
 import re
 import os
 import time
+from scipy import stats
 #from wordcloud import WordCloud
 #import matplotlib.pyplot as plt
 from utils import helpers, langtools
@@ -104,7 +105,7 @@ while year <= max_year:
         word_frequecy_per_year_df.loc[len(word_frequecy_per_year_df)] = {'year': year, 'word': k, 'n': v}
 
     # save the year's word freqs as a csv ("checkpoint save")
-    save_file_name = f'word_frequcy_per_year_{year}.csv'
+    save_file_name = f'word_frequency_per_year_{year}.csv'
 
     if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
         os.remove(f'{directory}/csv_analysis/{save_file_name}')
@@ -112,14 +113,51 @@ while year <= max_year:
 
     year = year+1
 
-# save word_frequency_per_year_df as csv ("checkpoint save")
-if 'word_frequency_per_year.csv' in os.listdir(f'{directory}/csv_analysis/'):
-    os.remove(f'{directory}/csv_analysis/word_frequency_per_year.csv')
-word_frequecy_per_year_df.to_csv(f'{directory}/csv_analysis/word_frequency_per_year.csv', sep=';', header=True, index=False, encoding='utf-8')
+# read file(s) from /csv_analysis -> combine them into one df: word_frequency_combined_df
+word_frequency_combined_df = pd.DataFrame(columns=['year', 'word', 'n', 'z_per_year'])
+
+for csv in os.listdir(f'{directory}/csv_analysis/'):
+    df = pd.read_csv(f'{directory}/csv_analysis/{csv}', sep=';', encoding='utf-8', header=0)
+
+    # calculate z-score for each word
+    # -> THIS WILL BE CALCULATED FOR YEARLY DATA, NOT OVER THE COMBINED DATASET!
+    df['z_per_year'] = None
+    ser = pd.Series(df['n'])
+    z_scores = pd.Series(stats.zscore(ser))
+    df['z_per_year'] = z_scores
+
+    word_frequency_combined_df = pd.concat([word_frequency_combined_df, df], axis=0, ignore_index=True)
+
+# let's build a df for the words in combined df's 2025 words and their z-scores per year
+comparison_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]])
+
+for i, d in word_frequency_combined_df.iterrows():
+    if d.word not in comparison_df['word']:
+        comparison_df.loc[len(comparison_df), 'word'] = d.word
+        col_val = f'z_{d.year}'
+        comparison_df.loc[comparison_df['word'] == d.word, col_val] = d.z_per_year
+    else:
+        col_val = f'z_{d.year}'
+        comparison_df.loc[comparison_df['word'] == d.word, col_val] = d.z_per_year
+
+print(comparison_df)
 
 # # #
 # # #
 # # #
+
+df = pd.read_csv(f'{directory}/csv_analysis/word_frequcy_per_year_2010.csv', sep=';', encoding='utf-8', header=0)
+
+df['z_per_year'] = float()
+df['n'].apply(stats.zscore, axis=0)
+
+ser = pd.Series(df['n'])
+print(ser)
+
+ser2 = pd.Series(stats.zscore(ser))
+print(ser2)
+df['z_per_year'] = ser2
+print(df)
 
 print(year_csv[['topic', 'content']].loc[year_csv['electoral_term'].isna() == True])
 year_csv['electoral_term_progression'] = year_csv.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)
