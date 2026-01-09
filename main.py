@@ -65,7 +65,7 @@ while year <= max_year:
     year = year+1
 
 # read file(s) from /csv_analysis -> combine them into one df: word_frequency_combined_df
-word_frequency_combined_df = pd.DataFrame(columns=['year', 'word', 'n', 'z_per_year'])
+word_frequency_combined_df = pd.DataFrame(columns=['year', 'word', 'n', 'z_per_year']).astype({'year': int, 'word': str, 'n': int, 'z_per_year': float})
 
 for csv in [i for i in os.listdir(f'{directory}/csv_analysis/') if 'word_frequency_per_year' in i]:
     df = pd.read_csv(f'{directory}/csv_analysis/{csv}', sep=';', encoding='utf-8', header=0)
@@ -81,15 +81,17 @@ for csv in [i for i in os.listdir(f'{directory}/csv_analysis/') if 'word_frequen
 
 # let's build a df for the words in combined df's 2025 words and their z-scores per year
 # --> second try to speed things up
-start_time = time.time()
+# 1) create an empty df, dynamically create columns to match the number of years to be processed (based on the files processed above)
 z_score_comp_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]])
+# 2) set data types
+z_score_comp_df = z_score_comp_df.astype({k : str if k=='word' else float for k in z_score_comp_df.columns}, copy=False)
 errors = 0
 error_words = []
-for word in [word for word in word_frequency_combined_df['word'].unique()]:
+for word in [word for word in word_frequency_combined_df['word'].unique()][:5]:
     try:
         word_df = word_frequency_combined_df.loc[word_frequency_combined_df['word'] == word]
         values_list = [word, *helpers.list_z_score_per_df_year(word_df, z_score_comp_df.columns)]
-        z_score_comp_df = pd.concat([z_score_comp_df, pd.DataFrame(data=[values_list], columns=z_score_comp_df.columns)], 
+        z_score_comp_df = pd.concat([z_score_comp_df, pd.DataFrame(data=[values_list], columns=z_score_comp_df.columns).astype(z_score_comp_df.dtypes)], 
                                 axis=0, ignore_index=True)
     except Exception as e:
         errors = errors+1
@@ -101,7 +103,6 @@ save_file_name = 'word_z_score_all_years.csv'
 if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
     os.remove(f'{directory}/csv_analysis/{save_file_name}')
 z_score_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
-print(f'{save_file_name}: file created and saved in {round(time.time()-start_time, 2)} seconds')
 print(f'Errors: {errors}, check variable: error_words')
 
 word_z_score_all_years = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
