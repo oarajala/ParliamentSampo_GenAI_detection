@@ -87,7 +87,7 @@ z_score_comp_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequen
 z_score_comp_df = z_score_comp_df.astype({k : str if k=='word' else float for k in z_score_comp_df.columns}, copy=False)
 errors = 0
 error_words = []
-for word in [word for word in word_frequency_combined_df['word'].unique()][:5]:
+for word in [word for word in word_frequency_combined_df['word'].unique()]:
     try:
         word_df = word_frequency_combined_df.loc[word_frequency_combined_df['word'] == word]
         values_list = [word, *helpers.list_z_score_per_df_year(word_df, z_score_comp_df.columns)]
