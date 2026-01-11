@@ -4,9 +4,169 @@ import socket
 import re
 import os
 import time
+from scipy import stats
 #from wordcloud import WordCloud
 #import matplotlib.pyplot as plt
 from utils import helpers, langtools
+
+# test run
+
+directory = helpers.get_parent_directory()
+
+csv_files_to_use_list = [i for i in os.listdir(f'{directory}/csv_lemmatization_added') if re.match(r'speeches_\d+\.csv', i) is not None]
+
+year, max_year = int(min(re.findall(r'\d+', ' '.join(csv_files_to_use_list)))), int(max(re.findall(r'\d+', ' '.join(csv_files_to_use_list))))
+
+# ### HOX HOX HOX
+# ### HARD CODING FOR TEST
+#year = 2010
+#max_year = 2012
+
+while year <= max_year:
+
+    print(f'year: {year}')
+
+    # read the year's contents from a csv
+    year_csv = pd.read_csv(f'{directory}/csv_lemmatization_added/speeches_{year}.csv', sep=',', header=0)
+
+    # calculate the progression of the electoral term
+    year_csv['electoral_term_progression'] = year_csv.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)
+
+    # fetch individual words from speeches (column 'content')
+    year_csv['words'] = year_csv.apply(lambda x: langtools.extract_words(x['content']), axis=1)
+
+    # fetch individual sentences from speeches (column 'content')
+    year_csv['sentences'] = year_csv.apply(lambda x: langtools.extract_sentences(x['content']), axis=1)
+
+    # calculate the appearances/frequencies of individual words, store from dict -> df
+    word_frequency_dict = {}
+    for index, row in year_csv.iterrows():
+        tmp_dict = langtools.count_word_freqs_in_string(row.words)
+        for k, v in tmp_dict.items():
+            if k not in word_frequency_dict.keys():
+                word_frequency_dict[k] = v
+            else:
+                word_frequency_dict[k] += v
+
+    # set a df for storing info and saving it for later
+    word_frequecy_per_year_df = pd.DataFrame(columns=['year', 'word', 'n'])
+
+    # populate the df
+    for k, v in word_frequency_dict.items():
+        word_frequecy_per_year_df.loc[len(word_frequecy_per_year_df)] = {'year': year, 'word': k, 'n': v}
+
+    # save the year's word freqs as a csv ("checkpoint save")
+    save_file_name = f'word_frequency_per_year_{year}.csv'
+
+    if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
+        os.remove(f'{directory}/csv_analysis/{save_file_name}')
+    word_frequecy_per_year_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
+
+    year = year+1
+
+# read file(s) from /csv_analysis -> combine them into one df: word_frequency_combined_df
+word_frequency_combined_df = pd.DataFrame(columns=['year', 'word', 'n', 'z_per_year']).astype({'year': int, 'word': str, 'n': int, 'z_per_year': float})
+
+for csv in [i for i in os.listdir(f'{directory}/csv_analysis/') if 'word_frequency_per_year' in i]:
+    df = pd.read_csv(f'{directory}/csv_analysis/{csv}', sep=';', encoding='utf-8', header=0)
+
+    # calculate z-score for each word
+    # -> THIS WILL BE CALCULATED FOR YEARLY DATA, NOT OVER THE COMBINED DATASET!
+    df['z_per_year'] = None
+    ser = pd.Series(df['n'])
+    z_scores = pd.Series(stats.zscore(ser))
+    df['z_per_year'] = z_scores
+
+    word_frequency_combined_df = pd.concat([word_frequency_combined_df, df], axis=0, ignore_index=True)
+
+# Now that we have the z-score per every word per every year, let's pivot the data for readability and availability for analysis.
+# We want a wide df instead of long: for every row (axis=0) we have the word and its z-score per year; therefore columns: word and years.
+z_score_comp_df = word_frequency_combined_df.pivot_table(values='z_per_year', index='word', columns=['year']).rename_axis(columns=None)
+# Prep the df for saving for futher analysis:
+# - add 'word' as a column instead of index
+# - rename year columns 'YYYY' -> 'z_YYYY'
+z_score_comp_df['word'] = z_score_comp_df.index
+z_score_comp_df.reset_index(drop=True, inplace=True)
+z_score_comp_df.rename(columns={k : f'z_{k}' for k in z_score_comp_df.columns if str(k)!='word'}, inplace=True)
+z_score_comp_df.sort_index(axis=1, inplace=True)
+
+# checkpoint save
+save_file_name = 'word_z_score_all_years.csv'
+if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
+    os.remove(f'{directory}/csv_analysis/{save_file_name}')
+z_score_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
+
+word_z_score_all_years = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
+
+# skew test: can checking the skew make finding interesting words easier?
+input_cols = [col for col in word_z_score_all_years.columns if re.search(r'\d', col) is not None]
+word_z_score_all_years['z_score_skew'] = word_z_score_all_years[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
+print(word_z_score_all_years.loc[word_z_score_all_years['z_score_skew']>4])
+
+# ANOVA: years <2023 and >=2023
+
+# # #
+# # #
+# # #
+print(z_score_comp_df.loc[z_score_comp_df['word']=='&'])
+print(word_frequency_combined_df.loc[word_frequency_combined_df['word']=='ravi'])
+
+print(word_frequency_combined_df.loc[word_frequency_combined_df['year'].isin([2010])].pivot(columns='year', index='word', values='z_per_year'))
+print(word_frequency_combined_df.loc[word_frequency_combined_df['year'].isin([2010, 2011, 2012, 2013])].pivot_table(values='z_per_year', index='word', columns=['year']))
+print(word_frequency_combined_df.pivot_table(values='z_per_year', index='word', columns='year').rename(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]]))
+testdf = word_frequency_combined_df.pivot_table(values='z_per_year', index='word', columns='year').rename_axis(columns=None)
+testdf['word'] = testdf.index
+testdf.reset_index(drop=True, inplace=True)
+testdf.rename(columns={k : f'z_{k}' for k in testdf.columns if str(k)!='word'}, inplace=True)
+print(testdf.sort_index(axis=1))
+
+#testdf['word'] = testdf.index
+#testdf = testdf[['word', *[y for y in word_frequency_combined_df['year'].unique()]]].reset_index(drop=True)
+#testdf.columns
+# ###
+# let's build a df for the words in combined df's 2025 words and their z-scores per year
+# --> second try to speed things up
+# 1) create an empty df, dynamically create columns to match the number of years to be processed (based on the files processed above)
+z_score_comp_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]])
+# 2) set data types
+z_score_comp_df = z_score_comp_df.astype({k : str if k=='word' else float for k in z_score_comp_df.columns}, copy=False)
+errors = 0
+error_words = []
+for word in [word for word in word_frequency_combined_df['word'].unique()]:
+    try:
+        word_df = word_frequency_combined_df.loc[word_frequency_combined_df['word'] == word]
+        values_list = [word, *helpers.list_z_score_per_df_year(word_df, z_score_comp_df.columns)]
+        z_score_comp_df = pd.concat([z_score_comp_df, pd.DataFrame(data=[values_list], columns=z_score_comp_df.columns).astype(z_score_comp_df.dtypes)], 
+                                axis=0, ignore_index=True)
+    except Exception as e:
+        errors = errors+1
+        error_words.append(word)
+        pass
+# ###
+
+df = pd.read_csv(f'{directory}/csv_analysis/word_frequcy_per_year_2010.csv', sep=';', encoding='utf-8', header=0)
+
+df['z_per_year'] = float()
+df['n'].apply(stats.zscore, axis=0)
+
+ser = pd.Series(df['n'])
+print(ser)
+
+ser2 = pd.Series(stats.zscore(ser))
+print(ser2)
+df['z_per_year'] = ser2
+print(df)
+
+print(year_csv[['topic', 'content']].loc[year_csv['electoral_term'].isna() == True])
+year_csv['electoral_term_progression'] = year_csv.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)
+
+print(year_csv['electoral_term'].loc[year_csv['electoral_term'].isna() == True])
+print(year_csv['electoral_term'].unique())
+'2011-04-20-2015-04-21'[:10]
+
+#print(word_frequency_dict)
+#print(word_frequecy_per_year_df[['word', 'n']])
+#print(pd.DataFrame.from_dict(data=word_frequency_dict, columns=['n'], orient='index'))
 
 # Analysis limited to time where lemmatized texts are available.
 
@@ -53,3 +213,6 @@ print(asd[['content', 'words']])
 asd['sentences'] = asd.apply(lambda x: langtools.extract_sentences(x['content']), axis=1)
 
 print(asd[['content', 'sentences']])
+
+for i in asd['words'][:10]:
+    print(i)

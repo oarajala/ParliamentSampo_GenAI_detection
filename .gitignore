@@ -52,6 +52,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+csv_analysis/*.csv
 csv_lemmatization_added/*.csv
 csv_rawdata/*.csv
 
