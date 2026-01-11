@@ -7,11 +7,13 @@ def extract_words(speech: str):
     speech = speech.lower()
     # replace special characters as blanks -> extract only words
     # modify list as necessary
-    speech = re.sub(r'[\.\?\+\/\$\[\],;!:%"]', '', speech) #speech.replace('.', '').replace(',', '').replace('!', '').replace('?', '').replace(';', '').replace('-', '')
+    speech = re.sub(r'[\.\?\+\/\$\[\]\(\),;!:%"&]+', '', speech) #speech.replace('.', '').replace(',', '').replace('!', '').replace('?', '').replace(';', '').replace('-', '')
     # replace numbers as blanks -> extract only words
     speech = re.sub(r'[0-9]', '', speech)
     # replace linebreaks '\n' as spaces ' '
     speech = re.sub(r'\n', ' ', speech)
+    # replace tabulation '\t' as space ' '
+    speech = re.sub(r'\t', ' ', speech)
     # replace double spaces '  ' as a single space ' '
     speech = speech.replace('  ', ' ')
     # remove spaces at the start and end

@@ -79,6 +79,51 @@ for csv in [i for i in os.listdir(f'{directory}/csv_analysis/') if 'word_frequen
 
     word_frequency_combined_df = pd.concat([word_frequency_combined_df, df], axis=0, ignore_index=True)
 
+# Now that we have the z-score per every word per every year, let's pivot the data for readability and availability for analysis.
+# We want a wide df instead of long: for every row (axis=0) we have the word and its z-score per year; therefore columns: word and years.
+z_score_comp_df = word_frequency_combined_df.pivot_table(values='z_per_year', index='word', columns=['year']).rename_axis(columns=None)
+# Prep the df for saving for futher analysis:
+# - add 'word' as a column instead of index
+# - rename year columns 'YYYY' -> 'z_YYYY'
+z_score_comp_df['word'] = z_score_comp_df.index
+z_score_comp_df.reset_index(drop=True, inplace=True)
+z_score_comp_df.rename(columns={k : f'z_{k}' for k in z_score_comp_df.columns if str(k)!='word'}, inplace=True)
+z_score_comp_df.sort_index(axis=1, inplace=True)
+
+# checkpoint save
+save_file_name = 'word_z_score_all_years.csv'
+if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
+    os.remove(f'{directory}/csv_analysis/{save_file_name}')
+z_score_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
+
+word_z_score_all_years = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
+
+# skew test: can checking the skew make finding interesting words easier?
+input_cols = [col for col in word_z_score_all_years.columns if re.search(r'\d', col) is not None]
+word_z_score_all_years['z_score_skew'] = word_z_score_all_years[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
+print(word_z_score_all_years.loc[word_z_score_all_years['z_score_skew']>4])
+
+# ANOVA: years <2023 and >=2023
+
+# # #
+# # #
+# # #
+print(z_score_comp_df.loc[z_score_comp_df['word']=='&'])
+print(word_frequency_combined_df.loc[word_frequency_combined_df['word']=='ravi'])
+
+print(word_frequency_combined_df.loc[word_frequency_combined_df['year'].isin([2010])].pivot(columns='year', index='word', values='z_per_year'))
+print(word_frequency_combined_df.loc[word_frequency_combined_df['year'].isin([2010, 2011, 2012, 2013])].pivot_table(values='z_per_year', index='word', columns=['year']))
+print(word_frequency_combined_df.pivot_table(values='z_per_year', index='word', columns='year').rename(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]]))
+testdf = word_frequency_combined_df.pivot_table(values='z_per_year', index='word', columns='year').rename_axis(columns=None)
+testdf['word'] = testdf.index
+testdf.reset_index(drop=True, inplace=True)
+testdf.rename(columns={k : f'z_{k}' for k in testdf.columns if str(k)!='word'}, inplace=True)
+print(testdf.sort_index(axis=1))
+
+#testdf['word'] = testdf.index
+#testdf = testdf[['word', *[y for y in word_frequency_combined_df['year'].unique()]]].reset_index(drop=True)
+#testdf.columns
+# ###
 # let's build a df for the words in combined df's 2025 words and their z-scores per year
 # --> second try to speed things up
 # 1) create an empty df, dynamically create columns to match the number of years to be processed (based on the files processed above)
@@ -97,41 +142,7 @@ for word in [word for word in word_frequency_combined_df['word'].unique()]:
         errors = errors+1
         error_words.append(word)
         pass
-
-# checkpoint save
-save_file_name = 'word_z_score_all_years.csv'
-if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
-    os.remove(f'{directory}/csv_analysis/{save_file_name}')
-z_score_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
-print(f'Errors: {errors}, check variable: error_words')
-
-word_z_score_all_years = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
-
-# skew test: can checking the skew make finding interesting words easier?
-input_cols = [col for col in word_z_score_all_years.columns if re.search(r'\d', col) is not None]
-word_z_score_all_years['z_score_skew'] = word_z_score_all_years[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
-print(word_z_score_all_years.loc[word_z_score_all_years['z_score_skew']>3])
-
-# ANOVA: years <2023 and >=2023
-
-# # #
-# # #
-# # #
-print(word_z_score_all_years)
-print(word_frequency_combined_df.loc[word_frequency_combined_df['word']=='ravi'])
-
-# let's build a df for the words in combined df's 2025 words and their z-scores per year
-# SKIP SKIP SKIP TAKES AGES!!!
-comparison_df = pd.DataFrame(columns=['word', *[f'z_{y}' for y in word_frequency_combined_df['year'].unique()]])
-for i, d in word_frequency_combined_df.iterrows():
-    if d.word not in comparison_df['word']:
-        comparison_df.loc[len(comparison_df), 'word'] = d.word
-        col_val = f'z_{d.year}'
-        comparison_df.loc[comparison_df['word'] == d.word, col_val] = d.z_per_year
-    else:
-        col_val = f'z_{d.year}'
-        comparison_df.loc[comparison_df['word'] == d.word, col_val] = d.z_per_year
-print(comparison_df)
+# ###
 
 df = pd.read_csv(f'{directory}/csv_analysis/word_frequcy_per_year_2010.csv', sep=';', encoding='utf-8', header=0)
 
