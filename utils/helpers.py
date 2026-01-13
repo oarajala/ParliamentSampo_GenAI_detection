@@ -3,6 +3,8 @@ from datetime import timedelta, datetime, date
 import re
 import pandas as pd
 
+CHATGPT_RELEASE_YEAR = int(2022)
+
 def get_parent_directory() -> str:
     """Get the parent directory for handling csv files.
 
@@ -46,7 +48,8 @@ def calculate_electoral_term_progression(date: str, electoral_term: str) -> int:
         return progression
     
 def list_z_score_per_df_year(df: pd.DataFrame, df_cols: list) -> list:
-    """Eats a df and a list of column names. Creates a list of values for an easy row concatenation (transposition) into another df.
+    """20260113 NOT USED AT THE MOMENT
+    Eats a df and a list of column names. Creates a list of values for an easy row concatenation (transposition) into another df.
     Inserts None as value for differences in transposable data and column list.
     Used for transposing/pivoting data into wide format from long lists of z-scores.
     """
