@@ -10,7 +10,6 @@ from scipy import stats
 from utils import helpers, langtools
 
 # test run
-
 directory = helpers.get_parent_directory()
 
 csv_files_to_use_list = [i for i in os.listdir(f'{directory}/csv_lemmatization_added') if re.match(r'speeches_\d+\.csv', i) is not None]
@@ -90,20 +89,57 @@ z_score_comp_df.reset_index(drop=True, inplace=True)
 z_score_comp_df.rename(columns={k : f'z_{k}' for k in z_score_comp_df.columns if str(k)!='word'}, inplace=True)
 z_score_comp_df.sort_index(axis=1, inplace=True)
 
+# skew test: can checking the skew make finding interesting words easier?
+input_cols = [col for col in z_score_comp_df.columns if re.search(r'\d', col) is not None]
+z_score_comp_df['z_score_skew'] = z_score_comp_df[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
+# chatgpt was released in late 2022 - let's check if there are words where z_2023 is higher than in previous years
+# also z-scores for previous years are not missing
+years_antegpt = [col for col in z_score_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
+years_postgpt = [col for col in z_score_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) > helpers.CHATGPT_RELEASE_YEAR]
+z_score_comp_df['z_mean_larger_post_release'] = z_score_comp_df.apply(lambda x: True if x[years_postgpt].mean() > x[years_antegpt].mean() else False, axis=1)
+
 # checkpoint save
 save_file_name = 'word_z_score_all_years.csv'
 if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
     os.remove(f'{directory}/csv_analysis/{save_file_name}')
 z_score_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
 
-word_z_score_all_years = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
+# first batch of analysis - trying to recognise significant changes after the release of genAI tools
+z_score_comp_analysis_df = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
 
-# skew test: can checking the skew make finding interesting words easier?
-input_cols = [col for col in word_z_score_all_years.columns if re.search(r'\d', col) is not None]
-word_z_score_all_years['z_score_skew'] = word_z_score_all_years[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
-print(word_z_score_all_years.loc[word_z_score_all_years['z_score_skew']>4])
+z_score_comp_analysis_df.loc[(z_score_comp_analysis_df['z_score_skew'].isna()==False) & (z_score_comp_analysis_df['z_score_skew']>4)]
 
-# ANOVA: years <2023 and >=2023
+# chatgpt was released in late 2022 - let's check if there are words where z_2023 is higher than in previous years
+# also z-scores for previous years are not missing
+years_antegpt = [col for col in z_score_comp_analysis_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
+years_postgpt = [col for col in z_score_comp_analysis_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) > helpers.CHATGPT_RELEASE_YEAR]
+z_score_comp_analysis_df['z_mean_larger_post_release'] = z_score_comp_analysis_df.apply(lambda x: True if x[years_postgpt].mean() > x[years_antegpt].mean() else False, axis=1)
+
+z_score_comp_analysis_df.loc[z_score_comp_analysis_df['z_sig_larger'] == True]
+
+df = z_score_comp_analysis_df.loc[
+    (z_score_comp_analysis_df['z_2000'].notna()==True)
+    & (z_score_comp_analysis_df['z_2001'].notna()==True)
+    & (z_score_comp_analysis_df['z_2002'].notna()==True)
+    & (z_score_comp_analysis_df['z_2003'].notna()==True)
+    & (z_score_comp_analysis_df['z_2004'].notna()==True)
+    & (z_score_comp_analysis_df['z_2005'].notna()==True)
+    & (z_score_comp_analysis_df['z_2006'].notna()==True)
+    & (z_score_comp_analysis_df['z_2007'].notna()==True)
+    & (z_score_comp_analysis_df['z_2008'].notna()==True)
+    & (z_score_comp_analysis_df['z_2009'].notna()==True)
+    & (z_score_comp_analysis_df['z_2010'].notna()==True)
+    & (z_score_comp_analysis_df['z_2011'].notna()==True)
+    & (z_score_comp_analysis_df['z_2012'].notna()==True)
+    & (z_score_comp_analysis_df['z_2013'].notna()==True)
+    & (z_score_comp_analysis_df['z_2014'].notna()==True)
+    & (z_score_comp_analysis_df['z_2015'].notna()==True)
+    & (z_score_comp_analysis_df['z_2016'].notna()==True)
+    & (z_score_comp_analysis_df['z_2017'].notna()==True)
+    & (z_score_comp_analysis_df['z_2018'].notna()==True)
+    & (z_score_comp_analysis_df['z_2019'].notna()==True)
+    & (z_score_comp_analysis_df['z_20'].notna()==True)
+]
 
 # # #
 # # #

@@ -7,7 +7,9 @@ def extract_words(speech: str):
     speech = speech.lower()
     # replace special characters as blanks -> extract only words
     # modify list as necessary
-    speech = re.sub(r'[\.\?\+\/\$\[\]\(\),;!:%"&]+', '', speech) #speech.replace('.', '').replace(',', '').replace('!', '').replace('?', '').replace(';', '').replace('-', '')
+    speech = re.sub(r'[\.\?\+\/\$\[\]\(\)\',;!:%"&”]+', '', speech)
+    # replace dash '-' if it appears after a break but attached to a word; do nothing if dash '-' is between two characters
+    speech = re.sub(r'\s\-', ' ', speech) 
     # replace numbers as blanks -> extract only words
     speech = re.sub(r'[0-9]', '', speech)
     # replace linebreaks '\n' as spaces ' '
@@ -50,10 +52,14 @@ def count_word_freqs_in_string(string: str):
 
     return wordfreq_dict
 
+def z_score_comparison_mean():
+    pass
+
 #'A quick brown fox, jumped over? A lazy dog.'.split('[,]')
 #re.split(r'[\.\?\+\-\/,;!:]', 'A quick brown fox, jumped over? A lazy dog.')
-#test_string = 'kun tarja filatov on saanut vaalissa enemmän kuin puolet annetuista hyväksytyistä äänistä on hänet valittu eduskunnan toiseksi varapuhemieheksi vuoden valtiopäivien ajaksi'
-#re.split(r' ', test_string)
 
+#test_string = 'kun tarja kukka-maaria filatov Daavidin Linko -järjestelmä "äiti" on "saanut vaalissa" enemmän kuin puolet annetuista hyväksytyistä äänistä on hänet valittu eduskunnan toiseksi varapuhemieheksi vuoden valtiopäivien ajaksi'
+#test_string = extract_words(test_string)
 #tt = count_word_freqs_in_string(test_string)
-#tt
+#print(test_string)
+#print(tt)
