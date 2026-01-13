@@ -1,12 +1,12 @@
 # onnistuuko parlamenttisammon datojen haku
 # -> suora csv-luku palvelusta
 # https://www.ldf.fi/dataset/semparl -> Speeches
-
 import pandas as pd
 import requests
 import re
 import os
 import time
+from utils import helpers
 
 # Create necessary directories if they do not exist: "csv_rawdata/" and "csv_lemmatization_added/"
 if 'csv_rawdata' not in os.listdir(path='.'):
@@ -14,19 +14,7 @@ if 'csv_rawdata' not in os.listdir(path='.'):
 if 'csv_lemmatization_added' not in os.listdir(path='.'):
     os.mkdir(path='./csv_lemmatization_added')
 
-def parent_directory() -> str:
-    """Get the parent directory for handling csv files.
-
-    Returns:
-        string: the path to the directory where directories for csv files are located
-    """
-    #create relative path for parent
-    relative_parent = os.path.join(os.getcwd(), '.')
-
-    #use abspath for absolute parent path
-    return str(os.path.abspath(relative_parent)).replace('\\', '/')
-
-parent_directory_str = parent_directory()
+parent_directory_str = helpers.get_parent_directory()
 
 def get_list_of_csv_online():
     """_summary_
@@ -52,8 +40,8 @@ def get_list_of_csv_online():
 
 list_online = get_list_of_csv_online()
 
-# LIMIT FILES TO YEARS 2010->
-list_online = [i for i in list_online if re.search(r'\d+', i) is not None and int(re.search(r'\d+', i).group(0)) >= 2010]
+# LIMIT FILES TO YEARS 2000->
+list_online = [i for i in list_online if re.search(r'\d+', i) is not None and int(re.search(r'\d+', i).group(0)) >= 2000]
 
 def get_csv_file(file_name):
     """Download a csv file and save it locally for quick access.
