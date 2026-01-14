@@ -7,7 +7,7 @@ import time
 from scipy import stats
 #from wordcloud import WordCloud
 #import matplotlib.pyplot as plt
-from utils import helpers, langtools
+from utils import helpers
 
 # test run
 directory = helpers.get_parent_directory()
@@ -32,15 +32,15 @@ while year <= max_year:
     year_csv['electoral_term_progression'] = year_csv.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)
 
     # fetch individual words from speeches (column 'content')
-    year_csv['words'] = year_csv.apply(lambda x: langtools.extract_words(x['content']), axis=1)
+    year_csv['words'] = year_csv.apply(lambda x: helpers.extract_words(x['content']), axis=1)
 
     # fetch individual sentences from speeches (column 'content')
-    year_csv['sentences'] = year_csv.apply(lambda x: langtools.extract_sentences(x['content']), axis=1)
+    year_csv['sentences'] = year_csv.apply(lambda x: helpers.extract_sentences(x['content']), axis=1)
 
     # calculate the appearances/frequencies of individual words, store from dict -> df
     word_frequency_dict = {}
     for index, row in year_csv.iterrows():
-        tmp_dict = langtools.count_word_freqs_in_string(row.words)
+        tmp_dict = helpers.count_word_freqs_in_string(row.words)
         for k, v in tmp_dict.items():
             if k not in word_frequency_dict.keys():
                 word_frequency_dict[k] = v
@@ -222,11 +222,11 @@ csv = pd.read_csv(f'{directory}/ai_release_timeline.csv', header=0, encoding='ut
 
 print(asd['content'])
 
-asd['words'] = asd.apply(lambda x: langtools.extract_words(x['content']), axis=1)
+asd['words'] = asd.apply(lambda x: helpers.extract_words(x['content']), axis=1)
 
 print(asd[['content', 'words']])
 
-asd['sentences'] = asd.apply(lambda x: langtools.extract_sentences(x['content']), axis=1)
+asd['sentences'] = asd.apply(lambda x: helpers.extract_sentences(x['content']), axis=1)
 
 print(asd[['content', 'sentences']])
 
