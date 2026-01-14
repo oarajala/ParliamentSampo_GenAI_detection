@@ -7,7 +7,7 @@ def extract_words(speech: str):
     speech = speech.lower()
     # replace special characters as blanks -> extract only words
     # modify list as necessary
-    speech = re.sub(r'[\.\?\+\/\$\[\]\(\)\',;!:%"&”]+', '', speech)
+    speech = re.sub(r'[\.\?\+\/\$\[\]\(\)\'\’\`,;!:%"&”]+', '', speech)
     # replace dash '-' if it appears after a break but attached to a word; do nothing if dash '-' is between two characters
     speech = re.sub(r'\s\-', ' ', speech) 
     # replace numbers as blanks -> extract only words
@@ -58,7 +58,7 @@ def z_score_comparison_mean():
 #'A quick brown fox, jumped over? A lazy dog.'.split('[,]')
 #re.split(r'[\.\?\+\-\/,;!:]', 'A quick brown fox, jumped over? A lazy dog.')
 
-#test_string = 'kun tarja kukka-maaria filatov Daavidin Linko -järjestelmä "äiti" on "saanut vaalissa" enemmän kuin puolet annetuista hyväksytyistä äänistä on hänet valittu eduskunnan toiseksi varapuhemieheksi vuoden valtiopäivien ajaksi'
+#test_string = 'kun ’tarja’ kukka-maaria `filatov` Daavidin Linko -järjestelmä "äiti" on "saanut vaalissa" enemmän kuin puolet annetuista hyväksytyistä äänistä on hänet valittu eduskunnan toiseksi varapuhemieheksi vuoden valtiopäivien ajaksi'
 #test_string = extract_words(test_string)
 #tt = count_word_freqs_in_string(test_string)
 #print(test_string)

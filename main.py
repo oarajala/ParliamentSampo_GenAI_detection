@@ -18,8 +18,8 @@ year, max_year = int(min(re.findall(r'\d+', ' '.join(csv_files_to_use_list)))), 
 
 # ### HOX HOX HOX
 # ### HARD CODING FOR TEST
-#year = 2010
-#max_year = 2012
+#year = 2016
+#max_year = 2025
 
 while year <= max_year:
 
@@ -108,7 +108,14 @@ z_score_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', he
 z_score_comp_analysis_df = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
 
 z_score_comp_analysis_df.loc[(z_score_comp_analysis_df['z_score_skew'].isna()==False) & (z_score_comp_analysis_df['z_score_skew']>4)]
+z_score_comp_analysis_df.loc[(z_score_comp_analysis_df['z_mean_larger_post_release']==True) 
+                             & (z_score_comp_analysis_df[years_antegpt].mean() < 0)
+                             & (z_score_comp_analysis_df[years_postgpt].mean() > 1)]
 
+
+# # #
+# # #
+# # #
 # chatgpt was released in late 2022 - let's check if there are words where z_2023 is higher than in previous years
 # also z-scores for previous years are not missing
 years_antegpt = [col for col in z_score_comp_analysis_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
@@ -117,33 +124,6 @@ z_score_comp_analysis_df['z_mean_larger_post_release'] = z_score_comp_analysis_d
 
 z_score_comp_analysis_df.loc[z_score_comp_analysis_df['z_sig_larger'] == True]
 
-df = z_score_comp_analysis_df.loc[
-    (z_score_comp_analysis_df['z_2000'].notna()==True)
-    & (z_score_comp_analysis_df['z_2001'].notna()==True)
-    & (z_score_comp_analysis_df['z_2002'].notna()==True)
-    & (z_score_comp_analysis_df['z_2003'].notna()==True)
-    & (z_score_comp_analysis_df['z_2004'].notna()==True)
-    & (z_score_comp_analysis_df['z_2005'].notna()==True)
-    & (z_score_comp_analysis_df['z_2006'].notna()==True)
-    & (z_score_comp_analysis_df['z_2007'].notna()==True)
-    & (z_score_comp_analysis_df['z_2008'].notna()==True)
-    & (z_score_comp_analysis_df['z_2009'].notna()==True)
-    & (z_score_comp_analysis_df['z_2010'].notna()==True)
-    & (z_score_comp_analysis_df['z_2011'].notna()==True)
-    & (z_score_comp_analysis_df['z_2012'].notna()==True)
-    & (z_score_comp_analysis_df['z_2013'].notna()==True)
-    & (z_score_comp_analysis_df['z_2014'].notna()==True)
-    & (z_score_comp_analysis_df['z_2015'].notna()==True)
-    & (z_score_comp_analysis_df['z_2016'].notna()==True)
-    & (z_score_comp_analysis_df['z_2017'].notna()==True)
-    & (z_score_comp_analysis_df['z_2018'].notna()==True)
-    & (z_score_comp_analysis_df['z_2019'].notna()==True)
-    & (z_score_comp_analysis_df['z_20'].notna()==True)
-]
-
-# # #
-# # #
-# # #
 print(z_score_comp_df.loc[z_score_comp_df['word']=='&'])
 print(word_frequency_combined_df.loc[word_frequency_combined_df['word']=='ravi'])
 
