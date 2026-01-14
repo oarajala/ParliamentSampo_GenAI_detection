@@ -17,6 +17,29 @@ def get_parent_directory() -> str:
     #use abspath for absolute parent path
     return str(os.path.abspath(relative_parent)).replace('\\', '/')
 
+def clean_special_chars_from_str(string: str):
+    """Clean special characters from input string. Return input string in lower case.
+    """
+    string = str(string)
+    # words shall all be lower case
+    string = string.lower()
+    # replace special characters as blanks -> extract only words
+    # modify list as necessary
+    string = re.sub(r'[\.\?\+\/\$\[\]\(\)\'\’\`,;!:%"&”]+', '', string)
+    # replace dash '-' if it appears between two whitespaces ' - '; do nothing if dash '-' is between two characters
+    string = re.sub(r'\s\—\s', ' ', string)
+    string = re.sub(r'\s\-\s', ' ', string) 
+    # replace linebreaks '\n' as spaces ' '
+    string = re.sub(r'\n', ' ', string)
+    # replace tabulation '\t' as space ' '
+    string = re.sub(r'\t', ' ', string)
+    # replace double spaces '  ' as a single space ' '
+    string = string.replace('  ', ' ')
+    # remove spaces at the start and end
+    string = string.strip()
+    # return words
+    return string
+
 def calculate_electoral_term_progression(date: str, electoral_term: str) -> int:
     """Added data validation due to missing values in 2011 raw csv.
     """
@@ -114,12 +137,15 @@ def count_word_freqs_in_string(string: str):
     """Counts the words in the input string.
     Returns a dictionary where the word is the key and the frequency is the value.
     """
-    words_list = re.split(' ', string)
-    wordfreq_dict = {}
-    for word in words_list:
-        if word not in wordfreq_dict.keys():
-            wordfreq_dict[word] = 1
-        else:
-            wordfreq_dict[word] += 1
+    if ((string is None) or (string == 'nan')):
+        return None
+    else:
+        words_list = re.split(' ', string)
+        wordfreq_dict = {}
+        for word in words_list:
+            if word not in wordfreq_dict.keys():
+                wordfreq_dict[word] = 1
+            else:
+                wordfreq_dict[word] += 1
 
-    return wordfreq_dict
+        return wordfreq_dict

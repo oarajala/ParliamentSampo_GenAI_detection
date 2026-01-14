@@ -53,7 +53,7 @@ coverage.xml
 .pytest_cache/
 cover/
 csv_analysis/*.csv
-csv_lemmatization_added/*.csv
+csv_lemmatized/*.csv
 csv_rawdata/*.csv
 
 # Translations

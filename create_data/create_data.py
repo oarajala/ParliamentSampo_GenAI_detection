@@ -6,15 +6,16 @@ import requests
 import re
 import os
 import time
+import simplemma
 from utils import helpers
 
-# Create necessary directories if they do not exist: "csv_rawdata/" and "csv_lemmatization_added/"
+parent_directory_str = helpers.get_parent_directory()
+
+# Create necessary directories if they do not exist: "csv_rawdata/" and "csv_lemmatized/"
 if 'csv_rawdata' not in os.listdir(path='.'):
     os.mkdir(path='./csv_rawdata')
-if 'csv_lemmatization_added' not in os.listdir(path='.'):
-    os.mkdir(path='./csv_lemmatization_added')
-
-parent_directory_str = helpers.get_parent_directory()
+if 'csv_lemmatized' not in os.listdir(path='.'):
+    os.mkdir(path='./csv_lemmatized')
 
 def get_list_of_csv_online():
     """_summary_
@@ -173,13 +174,13 @@ def extract_facet_electoral_term(string: str) -> str:
 for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
     # if file already has been created -> skip everything
     # otherwise get the data and create it
-    if csv_file in os.listdir(parent_directory_str+'/csv_lemmatization_added'):
+    if csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
         # do nothing
         print(f'{csv_file} already in directory. Skipping.')
         pass
     else:
         # do everything
-        file_path_write = f'{parent_directory_str}/csv_lemmatization_added/{csv_file}'
+        file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
         file_path_read = f'{parent_directory_str}/csv_rawdata/{csv_file}'
         i_file = pd.read_csv(file_path_read, sep=',', header=0, dtype=str)
 
@@ -256,3 +257,45 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
         except FileExistsError:
             os.remove(file_path_write)
             i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+
+# Not all years have lemmatized content available ready in the csvs. We'll add that now.
+# Check through the files and add lemmatization where content_lemmatized is empty or None.
+for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
+    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=',', header=0)
+
+    # lemmatize if no lemmatization is available from ParlamenttiSampo
+    # if lemmatized entries already exist in file (= ParlamenttiSampo has already lemmatized text) -> skip file: we prefer lemmatization by professionals
+    if i_file['content_lemmatized'].isna().all() == True:
+        i_file['content_lemmatized'] = i_file.apply(lambda x: ' '.join(simplemma.text_lemmatizer(helpers.clean_special_chars_from_str(x['content']), lang=x['lang'])) if x['lang'] in {'fi', 'sv'} else None, axis=1)        
+        file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
+        # save enriched file
+        try:
+            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+        except FileExistsError:
+            os.remove(file_path_write)
+            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+    else:
+        pass
+         
+
+df = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/speeches_2025.csv', sep=',', header=0)
+df[['lang','content','content_lemmatized']]
+df['content_lemmatized'].apply(helpers.clean_special_chars_from_str)
+
+df['content_lemmatized'] = df.apply(lambda x: ' '.join(simplemma.text_lemmatizer(helpers.clean_special_chars_from_str(x['content']), lang=x['lang'])) if x['lang'] in {'fi', 'sv'} else None, axis=1)
+df[['lang','content','content_lemmatized']]
+
+print(df['content_lemmatized'].isna().all())
+
+for speech in df['content'][:2]:
+    print(str(speech))
+    #print(speech.split(' '))
+    for i in speech.split(' '):
+        if len(i)>0 and re.search(r'\w', i) is not None:
+            print(simplemma.lemmatize(i, lang='fi'))
+
+ll = 'Toimitetaan "nimenhuuto" valtiopäiväjärjestyksen 25 §:n mukaan.  Pyydän, että edustajat nimenhuudossa seisomaan nousten kuuluvasti vastaavat, kun heidän nimensä huudetaan.'.split(' ')
+g = [simplemma.lemmatize(t, lang='fi') for t in ll if len(t)>0 and re.search(r'\w', t) is not None]
+print(*g)
+lll = 'Toimitetaan "nimenhuuto" valtiopäiväjärjestyksen 25 §:n mukaan.  Pyydän, että edustajat nimenhuudossa seisomaan nousten kuuluvasti vastaavat, kun heidän nimensä huudetaan.'
+simplemma.text_lemmatizer(helpers.clean_special_chars_from_str(lll), lang='fi')
