@@ -5,6 +5,7 @@ import re
 import os
 import time
 from scipy import stats
+from scipy import interpolate
 #from wordcloud import WordCloud
 #import matplotlib.pyplot as plt
 from utils import helpers
@@ -125,14 +126,45 @@ if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
 frequency_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
 
 # first batch of analysis - trying to recognise significant changes after the release of genAI tools
-z_score_comp_analysis_df = pd.read_csv(f'{directory}/csv_analysis/word_z_score_all_years.csv', sep=';', header=0, encoding='utf-8')
 
-z_score_comp_analysis_df.loc[(z_score_comp_analysis_df['z_score_skew'].isna()==False) & (z_score_comp_analysis_df['z_score_skew']>4)]
-z_score_comp_analysis_df.loc[(z_score_comp_analysis_df['z_mean_larger_post_release']==True) 
-                             & (z_score_comp_analysis_df[years_antegpt].mean() < 0)
-                             & (z_score_comp_analysis_df[years_postgpt].mean() > 1)]
+def linear_extrapolation(y: list, x: list, n=1) -> list:
+    #m = (y2 – y1) / (x2 – x1)
+    #y = y1 + m · (x – x1)
+    # x and y must be arrays of same length
+    if len(y) != len(x):
+        print('array length mismatch')
+        return None
+    else:
+        # format helper parameters to not modify lists outside the function
+        xx = [*[i for i in x]]
+        yy = [*[i for i in y]]
+        return_list = [] # format list to be returned
+        # loop n times -> return list of n length with n extrapolations
+        # note: extrapolating on extrapolations if n>1
+        while n >= 1:
+            # format x: it shall take a running sequence of numbers as its values
+            xx = [i for i in range(len(xx))]
+            m = (yy[-1] - yy[-2]) / (xx[-1] - xx[-2])
+            y_v = yy[-2] + m * ((xx[-1] + 1) - xx[-2])
+            xx.append([xx[-1]+1])
+            yy.append(y_v)
+            return_list.append(y_v)
+            n = n-1
+        return return_list
+    
+freq = pd.read_csv(f'{directory}/csv_analysis/word_frequency_all_years.csv', sep=';', encoding='utf-8')
 
+years_antegpt = [col for col in freq.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
+ver = freq[years_antegpt].iloc[5].values.tolist() # 15429
 
+print(years_antegpt)
+print(ver)
+kek = linear_extrapolation(ver, years_antegpt, n=1)
+print(kek)
+print(years_antegpt[-1]+1)
+print([i for i in range(len(years_antegpt))])   
+range([i for i in years_antegpt])
+[*[i for i in years_antegpt]]
 # # #
 # # #
 # # #

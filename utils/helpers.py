@@ -149,3 +149,36 @@ def count_word_freqs_in_string(string: str):
                 wordfreq_dict[word] += 1
 
         return wordfreq_dict
+
+def linear_extrapolation(y: list, x: list, n=1) -> list:
+    """_summary_
+
+    Args:
+        y (list): _description_
+        x (list): _description_
+        n (int, optional): _description_. Defaults to 1.
+
+    Returns:
+        list: _description_
+    """
+    # x and y must be arrays of same length
+    if len(y) != len(x):
+        print('array length mismatch')
+        return None
+    else:
+        # format helper parameters to not modify lists outside the function
+        xx = [*[i for i in x]]
+        yy = [*[i for i in y]]
+        return_list = [] # format list to be returned
+        # loop n times -> return list of n length with n extrapolations
+        # note: extrapolating on extrapolations if n>1
+        while n >= 1:
+            # format x: it shall take a running sequence of numbers as its values
+            xx = [i for i in range(len(xx))]
+            m = (yy[-1] - yy[-2]) / (xx[-1] - xx[-2])
+            y_v = yy[-2] + m * ((xx[-1] + 1) - xx[-2])
+            xx.append([xx[-1]+1])
+            yy.append(y_v)
+            return_list.append(y_v)
+            n = n-1
+        return return_list
