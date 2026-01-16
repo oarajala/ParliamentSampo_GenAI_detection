@@ -126,10 +126,27 @@ frequency_comp_df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', 
 
 # first batch of analysis - trying to recognise significant changes after the release of genAI tools
 freq = pd.read_csv(f'{directory}/csv_analysis/word_frequency_all_years.csv', sep=';', encoding='utf-8')
+# list of year columns in df before release of chatgpt
 years_antegpt = [col for col in freq.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
+# 2023 prediction based on years before chatgpt
 freq['n_2023_predicted'] = freq.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
 freq['n_2023_diffs'] = freq.apply(lambda x: x['n_2023'] - x['n_2023_predicted'], axis=1)
 freq['n_2023_ratios'] = freq.apply(lambda x: x['n_2023'] / 1 if x['n_2023_predicted'] is None else x['n_2023_predicted'], axis=1)
+# 2024 prediction based on years before chatgpt
+freq['n_2024_predicted'] = freq.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
+freq['n_2024_diffs'] = freq.apply(lambda x: x['n_2024'] - x['n_2024_predicted'], axis=1)
+freq['n_2024_ratios'] = freq.apply(lambda x: x['n_2024'] / 1 if x['n_2024_predicted'] is None else x['n_2024_predicted'], axis=1)
+# 2025 prediction based on years before chatgpt
+freq['n_2025_predicted'] = freq.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
+freq['n_2025_diffs'] = freq.apply(lambda x: x['n_2025'] - x['n_2025_predicted'], axis=1)
+freq['n_2025_ratios'] = freq.apply(lambda x: x['n_2025'] / 1 if x['n_2025_predicted'] is None else x['n_2025_predicted'], axis=1)
+
+save_file_name = 'word_frequency_all_years.csv'
+if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
+    os.remove(f'{directory}/csv_analysis/{save_file_name}')
+freq.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
+
+# ### NEXT: more regex to remove bad strings!!!
 
 print(freq[['word', 'n_2021', 'n_2022', 'n_2023_predicted', 'n_2023']].loc[freq['n_2023'] > freq['n_2023_predicted']])
 
