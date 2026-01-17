@@ -276,26 +276,20 @@ for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
             i_file.to_csv(file_path_write, sep=',', header=True, index=False)
     else:
         pass
-         
 
-df = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/speeches_2025.csv', sep=',', header=0)
-df[['lang','content','content_lemmatized']]
-df['content_lemmatized'].apply(helpers.clean_special_chars_from_str)
+# Add electoral term progression to csv_lemmatized-csvs if the info has not been added
+# Check through the files and add the info if the column does not exist yet
+for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
+    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=',', header=0)
 
-df['content_lemmatized'] = df.apply(lambda x: ' '.join(simplemma.text_lemmatizer(helpers.clean_special_chars_from_str(x['content']), lang=x['lang'])) if x['lang'] in {'fi', 'sv'} else None, axis=1)
-df[['lang','content','content_lemmatized']]
-
-print(df['content_lemmatized'].isna().all())
-
-for speech in df['content'][:2]:
-    print(str(speech))
-    #print(speech.split(' '))
-    for i in speech.split(' '):
-        if len(i)>0 and re.search(r'\w', i) is not None:
-            print(simplemma.lemmatize(i, lang='fi'))
-
-ll = 'Toimitetaan "nimenhuuto" valtiopäiväjärjestyksen 25 §:n mukaan.  Pyydän, että edustajat nimenhuudossa seisomaan nousten kuuluvasti vastaavat, kun heidän nimensä huudetaan.'.split(' ')
-g = [simplemma.lemmatize(t, lang='fi') for t in ll if len(t)>0 and re.search(r'\w', t) is not None]
-print(*g)
-lll = 'Toimitetaan "nimenhuuto" valtiopäiväjärjestyksen 25 §:n mukaan.  Pyydän, että edustajat nimenhuudossa seisomaan nousten kuuluvasti vastaavat, kun heidän nimensä huudetaan.'
-simplemma.text_lemmatizer(helpers.clean_special_chars_from_str(lll), lang='fi')
+    if 'electoral_term_progression' not in i_file.columns.tolist():
+        i_file['electoral_term_progression'] = i_file.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)        
+        file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
+        # save enriched file
+        try:
+            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+        except FileExistsError:
+            os.remove(file_path_write)
+            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+    else:
+        pass
