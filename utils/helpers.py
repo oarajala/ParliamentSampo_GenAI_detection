@@ -4,6 +4,7 @@ import re
 import pandas as pd
 
 CHATGPT_RELEASE_YEAR = int(2022)
+FINNISH_ALPHABET = 'abcdefghijklmnopqrstuvwxyzåäö'
 
 def get_parent_directory() -> str:
     """Get the parent directory for handling csv files.
@@ -16,6 +17,39 @@ def get_parent_directory() -> str:
 
     #use abspath for absolute parent path
     return str(os.path.abspath(relative_parent)).replace('\\', '/')
+
+def clean_string(string: str) -> str:
+    try:
+        # remove blanks in start and end
+        string = string.strip()
+        string = string.lower()
+        # the string must contain characters
+        if any(c in string for c in FINNISH_ALPHABET)==False:
+            string = ''
+        # remove tabulations, line breaks etc., also special characters
+        remove_these = r'[\+\*!"”?.,…()§\'[\] \t\n\r\f\v]'
+        string = re.sub(remove_these, '', string)
+        # remove weird parentheses and backwards linebreaks from starts of strings
+        string = re.sub(r'^\)\\[a-z]', '', string)
+        # remove weird '\[alphabet]' strings at start of strings
+        string = re.sub(r'^\\[a-z]', '', string)
+        # remove numbers
+        string = re.sub(r'[0-9]', '', string)
+        # remove dashes '-' at the start and end of string
+        string = re.sub(r'^-|-$', '', string)
+        # remove individual forward and backward slashes '/', '\'
+        string = re.sub(r'[\/\\]', '', string)
+        # at the end of the cleaning, remove all characters from the string which are not in the alphabet except for dash (compound words)
+        remove_these = ''.join([str(c) for c in string if c != '-' and c not in [i for i in FINNISH_ALPHABET]])
+        string = re.sub(remove_these, '', string)
+        # remove blanks in start and end again
+        string = string.strip()
+        # remove empty if string length < 2
+        string = '' if len(string) < 2 else string
+        return string
+    except:
+        print(f'Unexpected error at helpers.clean_string(), string: {string}')
+        raise
 
 def clean_special_chars_from_str(string: str):
     """Clean special characters from input string. Return input string in lower case.
