@@ -16,6 +16,8 @@ if 'csv_rawdata' not in os.listdir(path='.'):
     os.mkdir(path='./csv_rawdata')
 if 'csv_lemmatized' not in os.listdir(path='.'):
     os.mkdir(path='./csv_lemmatized')
+if 'csv_analysis' not in os.listdir(path='.'):
+    os.mkdir(path='./csv_analysis')
 
 def get_list_of_csv_online():
     """_summary_
