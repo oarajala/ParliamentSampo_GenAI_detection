@@ -120,19 +120,20 @@ for col in input_cols:
 
 # identify significant changes after the release of genAI tools
 # list of year columns in df before release of chatgpt
-years_antegpt = [col for col in frequency_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
+# LINEAR EXTRAPOLATION IS RUN ON NORMALISED VALUES IN NORM_YYYY COLUMNS, NOT THE N_YYYY VALUES
+years_antegpt = [col for col in frequency_comp_df.columns if re.search(r'norm_\d+', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
 # 2023 prediction based on years before chatgpt
-frequency_comp_df['n_2023_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
-frequency_comp_df['n_2023_diffs'] = frequency_comp_df.apply(lambda x: x['n_2023'] - x['n_2023_predicted'], axis=1)
-frequency_comp_df['n_2023_ratios'] = frequency_comp_df.apply(lambda x: x['n_2023'] / 1 if x['n_2023_predicted'] is None else x['n_2023_predicted'], axis=1)
+frequency_comp_df['norm_2023_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
+frequency_comp_df['norm_2023_diffs'] = frequency_comp_df.apply(lambda x: x['norm_2023'] - x['norm_2023_predicted'], axis=1)
+frequency_comp_df['norm_2023_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2023'] / 1 if x['norm_2023_predicted'] is None else x['norm_2023_predicted'], axis=1)
 # 2024 prediction based on years before chatgpt
-frequency_comp_df['n_2024_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
-frequency_comp_df['n_2024_diffs'] = frequency_comp_df.apply(lambda x: x['n_2024'] - x['n_2024_predicted'], axis=1)
-frequency_comp_df['n_2024_ratios'] = frequency_comp_df.apply(lambda x: x['n_2024'] / 1 if x['n_2024_predicted'] is None else x['n_2024_predicted'], axis=1)
+frequency_comp_df['norm_2024_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
+frequency_comp_df['norm_2024_diffs'] = frequency_comp_df.apply(lambda x: x['norm_2024'] - x['norm_2024_predicted'], axis=1)
+frequency_comp_df['norm_2024_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2024'] / 1 if x['norm_2024_predicted'] is None else x['norm_2024_predicted'], axis=1)
 # 2025 prediction based on years before chatgpt
-frequency_comp_df['n_2025_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
-frequency_comp_df['n_2025_diffs'] = frequency_comp_df.apply(lambda x: x['n_2025'] - x['n_2025_predicted'], axis=1)
-frequency_comp_df['n_2025_ratios'] = frequency_comp_df.apply(lambda x: x['n_2025'] / 1 if x['n_2025_predicted'] is None else x['n_2025_predicted'], axis=1)
+frequency_comp_df['norm_2025_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
+frequency_comp_df['norm_2025_diffs'] = frequency_comp_df.apply(lambda x: x['norm_2025'] - x['norm_2025_predicted'], axis=1)
+frequency_comp_df['norm_2025_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2025'] / 1 if x['norm_2025_predicted'] is None else x['norm_2025_predicted'], axis=1)
 
 # save files for analysis
 save_file_name = 'word_z_score_all_years.csv'
