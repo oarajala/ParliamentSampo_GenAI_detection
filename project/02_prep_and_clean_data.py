@@ -1,12 +1,9 @@
 import pandas as pd
-import requests
-import socket
+import numpy as np
 import re
 import os
-import time
 from scipy import stats
 from utils import helpers
-
 directory = helpers.get_parent_directory()
 
 csv_files_to_use_list = [i for i in os.listdir(f'{directory}/csv_lemmatized') if re.match(r'speeches_\d+\.csv', i) is not None]
@@ -32,7 +29,7 @@ while year <= max_year:
         pass
     else:
         # read the year's contents from a csv
-        year_csv = pd.read_csv(f'{directory}/csv_lemmatized/speeches_{year}.csv', sep=',', header=0)
+        year_csv = pd.read_csv(f'{directory}/csv_lemmatized/speeches_{year}.csv', sep=';', header=0)
         # calculate the appearances/frequencies of individual words, store from dict -> df
         word_frequency_dict = {}
         for index, row in year_csv.iterrows():
@@ -93,21 +90,6 @@ frequency_comp_df.reset_index(drop=True, inplace=True)
 frequency_comp_df.rename(columns={k : f'n_{k}' for k in frequency_comp_df.columns if str(k)!='word'}, inplace=True)
 frequency_comp_df.sort_index(axis=1, inplace=True)
 
-# skew test: can checking the skew make finding interesting words easier?
-input_cols = [col for col in z_score_comp_df.columns if re.search(r'\d', col) is not None]
-z_score_comp_df['z_score_skew'] = z_score_comp_df[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
-input_cols = [col for col in frequency_comp_df.columns if re.search(r'\d', col) is not None]
-frequency_comp_df['n_skew'] = frequency_comp_df[input_cols].apply(lambda x: stats.skewtest(a=x, nan_policy='omit')[0], axis=1)
-# chatgpt was released in late 2022 - let's check if there are words where z_2023 is higher than in previous years
-# also z-scores for previous years are not missing
-years_antegpt = [col for col in z_score_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
-years_postgpt = [col for col in z_score_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) > helpers.CHATGPT_RELEASE_YEAR]
-z_score_comp_df['z_mean_larger_post_release'] = z_score_comp_df.apply(lambda x: True if x[years_postgpt].mean() > x[years_antegpt].mean() else False, axis=1)
-
-years_antegpt = [col for col in frequency_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) <= helpers.CHATGPT_RELEASE_YEAR]
-years_postgpt = [col for col in frequency_comp_df.columns if re.search(r'\d', col) is not None and int(re.search(r'\d+', col)[0]) > helpers.CHATGPT_RELEASE_YEAR]
-frequency_comp_df['n_mean_larger_post_release'] = frequency_comp_df.apply(lambda x: True if x[years_postgpt].mean() > x[years_antegpt].mean() else False, axis=1)
-
 # normalise the data: min-max normalisation for n_YYYY columns
 # -> store normalised values in norm_YYYY columns
 input_cols = [col for col in frequency_comp_df.columns if re.search(r'n_\d+$', col) is not None]
@@ -125,15 +107,15 @@ years_antegpt = [col for col in frequency_comp_df.columns if re.search(r'norm_\d
 # 2023 prediction based on years before chatgpt
 frequency_comp_df['norm_2023_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
 frequency_comp_df['norm_2023_diffs'] = frequency_comp_df.apply(lambda x: x['norm_2023'] - x['norm_2023_predicted'], axis=1)
-frequency_comp_df['norm_2023_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2023'] / 1 if x['norm_2023_predicted'] is None else x['norm_2023_predicted'], axis=1)
+frequency_comp_df['norm_2023_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2023'] / (1 if (x['norm_2023_predicted'] is None or x['norm_2023_predicted']==np.float64(0)) else x['norm_2023_predicted']), axis=1)
 # 2024 prediction based on years before chatgpt
 frequency_comp_df['norm_2024_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
 frequency_comp_df['norm_2024_diffs'] = frequency_comp_df.apply(lambda x: x['norm_2024'] - x['norm_2024_predicted'], axis=1)
-frequency_comp_df['norm_2024_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2024'] / 1 if x['norm_2024_predicted'] is None else x['norm_2024_predicted'], axis=1)
+frequency_comp_df['norm_2024_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2024'] / (1 if (x['norm_2024_predicted'] is None or x['norm_2024_predicted']==np.float64(0)) else x['norm_2024_predicted']), axis=1)
 # 2025 prediction based on years before chatgpt
 frequency_comp_df['norm_2025_predicted'] = frequency_comp_df.apply(lambda x: helpers.linear_extrapolation(y=x[years_antegpt].values.tolist(), x=years_antegpt, n=1)[0], axis=1)
 frequency_comp_df['norm_2025_diffs'] = frequency_comp_df.apply(lambda x: x['norm_2025'] - x['norm_2025_predicted'], axis=1)
-frequency_comp_df['norm_2025_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2025'] / 1 if x['norm_2025_predicted'] is None else x['norm_2025_predicted'], axis=1)
+frequency_comp_df['norm_2025_ratios'] = frequency_comp_df.apply(lambda x: x['norm_2025'] / (1 if (x['norm_2025_predicted'] is None or x['norm_2025_predicted']==np.float64(0)) else x['norm_2025_predicted']), axis=1)
 
 # save files for analysis
 save_file_name = 'word_z_score_all_years.csv'
