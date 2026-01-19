@@ -20,6 +20,7 @@ project
 --word_frequency_per_year_2000.csv
 --word_frequency_all_years_csv.
 --...
+-ai_release_timeline.csv -> dates of some major generative AI releases
 ```
 Csv files:
 - encoding: utf-8
