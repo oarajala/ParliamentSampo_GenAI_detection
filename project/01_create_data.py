@@ -59,7 +59,7 @@ def get_csv_file(file_name):
     try:
         if file_name not in os.listdir(output_folder):
             csv = pd.read_csv(f'https://a3s.fi/parliamentsampo/speeches/csv/{file_name}', sep=',')
-            csv.to_csv(f'{output_folder}/{file_name}', header=True, index=False, sep=',')
+            csv.to_csv(f'{output_folder}/{file_name}', header=True, index=False, sep=';')
             return 0
         return 0
     except:
@@ -182,7 +182,7 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
         # do everything
         file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
         file_path_read = f'{parent_directory_str}/csv_rawdata/{csv_file}'
-        i_file = pd.read_csv(file_path_read, sep=',', header=0, dtype=str)
+        i_file = pd.read_csv(file_path_read, sep=';', header=0, dtype=str)
 
         # get length of dataframe for progress monitoring
         i_file_length = i_file.shape[0]
@@ -253,15 +253,15 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
 
         # save enriched file
         try:
-            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
         except FileExistsError:
             os.remove(file_path_write)
-            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
 
 # Not all years have lemmatized content available ready in the csvs. We'll add that now.
 # Check through the files and add lemmatization where content_lemmatized is empty or None.
 for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
-    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=',', header=0)
+    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=';', header=0)
 
     # lemmatize if no lemmatization is available from ParlamenttiSampo
     # if lemmatized entries already exist in file (= ParlamenttiSampo has already lemmatized text) -> skip file: we prefer lemmatization by professionals
@@ -270,26 +270,26 @@ for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
         file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
         # save enriched file
         try:
-            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
         except FileExistsError:
             os.remove(file_path_write)
-            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
     else:
         pass
 
 # Add electoral term progression to csv_lemmatized-csvs if the info has not been added
 # Check through the files and add the info if the column does not exist yet
 for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
-    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=',', header=0)
+    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=';', header=0)
 
     if 'electoral_term_progression' not in i_file.columns.tolist():
         i_file['electoral_term_progression'] = i_file.apply(lambda x: helpers.calculate_electoral_term_progression(x['date'], x['electoral_term']), axis=1)        
         file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
         # save enriched file
         try:
-            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
         except FileExistsError:
             os.remove(file_path_write)
-            i_file.to_csv(file_path_write, sep=',', header=True, index=False)
+            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
     else:
         pass
