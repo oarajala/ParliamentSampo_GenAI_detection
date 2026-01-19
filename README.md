@@ -2,14 +2,25 @@
 Attempts at detecting the use of GenAI from speeches stored in ParliamentSampo (Parlamenttisampo).
 
 ## Project structure
+```
 project
-|- project -> scripts are here; named in order they are intended to be run
-|- utils
-|--helpers.py -> helper functions
-|- csv_rawdata -> created in the scripts; raw data csvs from ParlamenttiSampo saved for quick access
-|- csv_lemmatized -> created in the scripts; enriched raw data csvs: added data includes lemmatization and election cycle progress
-|- csv_analysis -> created in the scripts; "save point" csvs for analysis phase
-
+-project -> scripts are here; named in order they are intended to be run
+--01_create_data.py
+--02_prep_and_clean_data.py
+--03_analysis.py
+-utils
+--helpers.py -> helper functions
+-csv_rawdata -> created in the scripts; raw data csvs from ParlamenttiSampo saved for quick access
+--speeches_2000.csv
+--...
+-csv_lemmatized -> created in the scripts; enriched raw data csvs: added data includes lemmatization and election cycle progress
+--speeches_2000.csv
+--...
+-csv_analysis -> created in the scripts; analysis-ready csvs
+--word_frequency_per_year_2000.csv
+--word_frequency_all_years_csv.
+--...
+```
 Csv files:
 - encoding: utf-8
 - separator: ; (semicolon) 
