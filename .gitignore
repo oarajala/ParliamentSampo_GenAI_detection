@@ -55,6 +55,7 @@ cover/
 csv_analysis/*.csv
 csv_lemmatized/*.csv
 csv_rawdata/*.csv
+test/*.csv
 
 # Translations
 *.mo
