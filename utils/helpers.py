@@ -2,6 +2,7 @@ import os
 from datetime import timedelta, datetime, date
 import re
 import pandas as pd
+import pyvoikko
 
 CHATGPT_RELEASE_YEAR = int(2022)
 FINNISH_ALPHABET = 'abcdefghijklmnopqrstuvwxyzåäö'
@@ -216,3 +217,27 @@ def linear_extrapolation(y: list, x: list, n=1) -> list:
             return_list.append(y_v)
             n = n-1
         return return_list
+
+def pyvoikko_wrapper(str_in: str) -> str:
+    """A small wrapper for pyvoikko Finnish text analysis tool.
+    Used to help lemmatizing strings. Uses the clean_string helper function.
+    NOTE: omits the etunimi (given name) word class returned in PyVoikko.
+
+    Args:
+        str_in (str): input string to lemmatize
+
+    Returns:
+        str: lemmatized string
+    """
+    # format output string
+    str_out = str()
+    # turn input string into a list
+    str_in = str_in.split()
+    for i in str_in:
+        i = pyvoikko.analyse(clean_string(i))
+        if (i is not None) and (len(i)>0) and (i[0].CLASS != 'etunimi'):
+            str_out = str_out+' '+i[0].BASEFORM
+    if len(str_out) == 0:
+        return None
+    else:
+        return str_out.strip()
