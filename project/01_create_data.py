@@ -8,7 +8,6 @@ import os
 import time
 import simplemma
 from utils import helpers
-
 parent_directory_str = helpers.get_parent_directory()
 
 # Create necessary directories if they do not exist: "csv_rawdata/" and "csv_lemmatized/"
@@ -262,22 +261,22 @@ for csv_file in os.listdir(parent_directory_str+'/csv_rawdata'):
 
 # Not all years have lemmatized content available ready in the csvs. We'll add that now.
 # Check through the files and add lemmatization where content_lemmatized is empty or None.
-for csv_file in os.listdir(parent_directory_str+'/csv_lemmatized'):
-    i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=';', header=0)
+for csv_file in [file for file in os.listdir(parent_directory_str+'/csv_lemmatized') if re.search(r'speeches_\d+\.csv', file)]:
+    try:
+        i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=';', header=0)
+    except pd.errors.ParserError:
+        i_file = pd.read_csv(f'{parent_directory_str}/csv_lemmatized/{csv_file}', sep=',', header=0)
 
     # lemmatize if no lemmatization is available from ParlamenttiSampo
-    # if lemmatized entries already exist in file (= ParlamenttiSampo has already lemmatized text) -> skip file: we prefer lemmatization by professionals
-    if i_file['content_lemmatized'].isna().all() == True:
-        i_file['content_lemmatized'] = i_file.apply(lambda x: ' '.join(simplemma.text_lemmatizer(helpers.clean_special_chars_from_str(x['content']), lang=x['lang'])) if x['lang'] in {'fi', 'sv'} else None, axis=1)        
-        file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
-        # save enriched file
-        try:
-            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
-        except FileExistsError:
-            os.remove(file_path_write)
-            i_file.to_csv(file_path_write, sep=';', header=True, index=False)
-    else:
-        pass
+    # skip already lemmatized entries (= ParlamenttiSampo has already lemmatized text): we prefer lemmatization by professionals
+    i_file['content_lemmatized'] = i_file.apply(lambda x: helpers.pyvoikko_wrapper(x['content']) if ((x['lang']=='fi') & (pd.isna(x['content_lemmatized']))) else x['content_lemmatized'], axis=1)        
+    file_path_write = f'{parent_directory_str}/csv_lemmatized/{csv_file}'
+    # save enriched file
+    try:
+        i_file.to_csv(file_path_write, sep=';', header=True, index=False)
+    except FileExistsError:
+        os.remove(file_path_write)
+        i_file.to_csv(file_path_write, sep=';', header=True, index=False)
 
 # Add electoral term progression to csv_lemmatized-csvs if the info has not been added
 # Check through the files and add the info if the column does not exist yet
