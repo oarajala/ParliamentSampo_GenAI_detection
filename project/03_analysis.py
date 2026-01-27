@@ -12,42 +12,115 @@ from utils import helpers
 import simplemma
 directory = helpers.get_parent_directory()
 
+import pyvoikko
+
+s = 'Arvoisa puhemies! Tämä ”tiedustelukulttuuri” tässä vilahtelee. Ja kun aihe kiinnostaa kollegoita, niin hieman taustaa. En ole teemaa tai sanaa itse keksinyt. Se on asiaa paremmin tuntevien käyttöön ottama, mutta olen itse sitä ruvennut valiokunnassa käyttämään ja eduskunnassa käyttämään, koska minun mielestäni se on hyvä sana, joka kuvaa lainsäädäntöä, luottamusta, viranomaistoimintaa ja kaikkea sitä, mikä tähän kuuluu. Jos — niin kuin tiedän — esimerkiksi edustaja Kiljunen on kiinnostunut kirjallisuudesta tutkijana, niin teoksen nimi on ”Suomalaisen tiedustelukulttuurin jäljillä”, ja se on Maanpuolustuskorkeakoulun julkaisu vuodelta 2020, toimittanut Tommi Koivula, sotataidon laitos. Julkaisu on ladattavissa myös verkosta, ja eduskunnan kirjasto auttaa tarvittaessa erinomaisella tavalla, jos joku haluaa. Olen kirjan lukenut, ja itselleni se oli kyllä hyvin antoisa teos, joka antoi syvyyttä tällaiselle siviilille, poliitikolle, joka sitten mielellään kuulee ja lukee asiantuntijoiden näkemyksiä asioista. Sieltä kumpuaa tämä ”tiedustelukulttuuri”‑sana. [Kimmo Kiljunen: Kiitos vihjeestä!]'
+ss = s.split()
+
+dd = {}
+for i in ss:
+    i = helpers.clean_string(i)
+    if i not in dd.keys():
+        a = pyvoikko.analyse(i)
+        if (a is not None) and (len(a)>0) and (a[0].CLASS != 'etunimi'):
+            dd[i] = a[0].BASEFORM
+    #oo = pyvoikko.analyse(i)
+    
+for k, v in dd.items():
+    print(k, v)
+
+dd = {}
+for i in ss:
+    i = helpers.clean_string(i)
+    print(i)
+    print(pyvoikko.analyse(i))
+    if i not in dd.keys():
+        a = pyvoikko.analyse(i)
+        if a is not None:
+            dd[i] = pyvoikko.analyse(i)[0]
+    #oo = pyvoikko.analyse(i)
+
+type(pyvoikko.analyse('kissaa'))
+
+for k, v in dd.items():
+    print(k, ': ', v)
+
+l = []
+for file in os.listdir(f'{directory}/csv_rawdata/'):
+    if '.csv' in file:
+        p = f'{directory}/csv_rawdata/{file}'
+        try:
+            f = pd.read_csv(p, sep=',', encoding='utf-8')
+        except:
+            f = pd.read_csv(p, sep=';', encoding='utf-8')    
+        finally:
+             print(f'{file}: {f.shape[0]}')  
+             l.append(f.shape[0])
+
+print(np.mean(l))
+
 # read csv for analysis from csv_analysis directory
 freq = pd.read_csv(f'{directory}/csv_analysis/word_frequency_all_years.csv', sep=';', encoding='utf-8')
 
 # note: small peeks into the set at this point
-df = freq.loc[(freq['norm_2023']>freq['norm_2022'])&(freq['norm_2024']>freq['norm_2022'])&(freq['norm_2025']>freq['norm_2022'])
-              &(freq['norm_2023']>freq['norm_2023_predicted'])&(freq['norm_2024']>freq['norm_2024_predicted'])&(freq['norm_2025']>freq['norm_2025_predicted'])].sort_values(by='norm_2025', ascending=False)
-               
-print(df[['word','norm_2021','norm_2022','norm_2023','norm_2023_ratios','norm_2024','norm_2025']].sort_values(by='norm_2023_ratios', ascending=True))
+
+# np.log10(ratios[ind]) > np.log10(2) - (np.log10(x[ind]) + 4) * (np.log10(2) / 4):
+# calculate log10(r)>(log10(2)/4)*(log10(p)) (r=ratios year Y, p=frequency year Y) for more tools to find excess words (courtesy of Kobak D. et al (2025))
+# -> select years for which to calculate
+years = set([re.search(r'\d+', col)[0] for col in df.columns if re.search(r'norm_\d+', col) is not None])
+years = ['2023','2024','2025']
+for y in years:
+    df[f'log10_r_{y}'] = df[f'norm_{y}_ratios'].apply(np.log10)
+    df[f'coef_log10_p_{y}'] = df.apply(lambda x: (np.log10(2)/4)*np.log10(x[f'norm_{y}']), axis=1)
+
+df.loc[((df['norm_2023_diffs']>0.01) | (df['log10_r_2023'] > df['coef_log10_p_2023'])==True) & 
+       ((df['norm_2024_diffs']>0.01) | (df['log10_r_2024'] > df['coef_log10_p_2024'])==True) &
+       ((df['norm_2025_diffs']>0.01) | (df['log10_r_2025'] > df['coef_log10_p_2025'])==True)]
+
 save_file_name = 'analysis_first_peek.csv'
 if save_file_name in os.listdir(f'{directory}/csv_analysis/'):
     os.remove(f'{directory}/csv_analysis/{save_file_name}')
 df.to_csv(f'{directory}/csv_analysis/{save_file_name}', sep=';', header=True, index=False, encoding='utf-8')
 
-cols = ['word', 'norm_2000', 'norm_2001', 'norm_2002','norm_2003', 'norm_2004', 'norm_2005', 'norm_2006', 'norm_2007',
-        'norm_2008', 'norm_2009', 'norm_2010', 'norm_2011', 'norm_2012', 'norm_2013', 'norm_2014', 'norm_2015', 'norm_2016', 
-        'norm_2017','norm_2018', 'norm_2019', 'norm_2020', 'norm_2021', 'norm_2022', 'norm_2023', 'norm_2024', 'norm_2025', 
-        'norm_2023_predicted','norm_2023_diffs', 'norm_2023_ratios', 'norm_2024_predicted', 'norm_2024_diffs', 'norm_2024_ratios', 
-        'norm_2025_predicted','norm_2025_diffs', 'norm_2025_ratios']
-df = pd.read_csv(f'{directory}/csv_analysis/analysis_first_peek.csv', sep=';', encoding='utf-8', usecols=cols)
+# unique words per year
+df = freq
 
+print(f'words 2022: {len(df[df['norm_2022'].notna()==True])}')
+print(f'words 2023: {len(df[df['norm_2023'].notna()==True])}')
+print(f'words 2024: {len(df[df['norm_2024'].notna()==True])}')
+print(f'words 2025: {len(df[df['norm_2025'].notna()==True])}')
 
-freq.loc[freq['word']=='tekoäly']
-df['norm_2025_ratios'].values.astype(np.float64).max()
-df['norm_2025_diffs'].values.max()
+print(f'words 2020: {len(df[df['norm_2020'].notna()==True])}')
+print(f'words 2019: {len(df[df['norm_2019'].notna()==True])}')
+print(f'words 2018: {len(df[df['norm_2018'].notna()==True])}')
+print(f'words 2017: {len(df[df['norm_2017'].notna()==True])}')
 
+for i in range(2015, 2026):
+    c = f'norm_{i}'
+    l = len(df[df[c].notna()==True])
+    print(f'words {i}: {l}')
 
-df['word'].loc[(df['norm_2023_diffs']>0.01)|(df['norm_2024_diffs']>0.01)|(df['norm_2025_diffs']>0.01)]
-# np.log10(ratios[ind]) > np.log10(2) - (np.log10(x[ind]) + 4) * (np.log10(2) / 4):
-df_logs = pd.DataFrame()
-df_logs[['word', 'norm_2023', 'norm_2023_diffs', 'norm_2023_ratios']] = df[['word', 'norm_2023', 'norm_2023_diffs', 'norm_2023_ratios']]
-df_logs['log10_r'] = df_logs.apply(lambda x: np.log10(x['norm_2023_ratios']), axis=1) #> np.log10(2) - (np.log10(df['norm_2023'])+4) * (np.log10(2)/4)
-df_logs['log_div'] = df_logs.apply(lambda x: np.log10(2)-((np.log10(x['norm_2023'])+4) * (np.log10(2)/4)), axis=1)
-df_logs['comparison'] = df_logs.apply(lambda x: True if x['log10_r']>x['log_div'] else False, axis=1)
-print(df_logs)
-df['log_comp'] = df_logs['comparison']
-df['word'].loc[(df['norm_2023_diffs']>0.01)|(df['norm_2024_diffs']>0.01)|(df['norm_2025_diffs']>0.01)|df['log_comp']==True]
+# what words appeared only after 2022/2023
+words_2021 = df['word'].loc[(df['norm_2021'].notna()==True)&(df['norm_2021']>0.0)].tolist()
+words_2022 = df['word'].loc[(df['norm_2022'].notna()==True)&(df['norm_2022']>0.0)].tolist()
+words_2023 = df['word'].loc[(df['norm_2023'].notna()==True)&(df['norm_2023']>0.0)].tolist()
+words_2024 = df['word'].loc[(df['norm_2024'].notna()==True)&(df['norm_2024']>0.0)].tolist()
+words_2025 = df['word'].loc[(df['norm_2025'].notna()==True)&(df['norm_2025']>0.0)].tolist()
+
+words_2023_excl_2022 = list(set(words_2023).difference(set(words_2022)))
+words_2024_excl_2022 = list(set(words_2024).difference(set(words_2022)))
+words_2025_excl_2022 = list(set(words_2025).difference(set(words_2022)))
+
+len(words_2023_excl_2022)
+len(words_2024_excl_2022)
+len(words_2025_excl_2022)
+
+t_intersect= list(set(words_2024_excl_2022).intersection(set(words_2025_excl_2022)))
+print(t_intersect)
+
+df[['word', 'n_2022']].loc[df['word']=='pahnanpohjimmainen']
+
+# what words became more frequent after 2022/2023
 
 print(df[['word', 'norm_2021', 'norm_2022', 'norm_2023_predicted', 'norm_2023', 'norm_2024_predicted', 'norm_2024', 'norm_2025_predicted', 'norm_2025', 
           'norm_2023_diffs', 'norm_2023_ratios', 'norm_2024_diffs', 'norm_2024_ratios', 'norm_2025_diffs', 'norm_2025_ratios']].loc
