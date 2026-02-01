@@ -18,8 +18,8 @@ year, max_year = int(min(re.findall(r'\d+', ' '.join(csv_files_to_use_list)))), 
 # These csvs are again later read and combined into one, wide, pivoted csv.
 # ### HOX HOX HOX
 # ### HARD CODING FOR TEST
-#year = 2025
-#max_year = 2025
+year = 2025
+max_year = 2025
 while year <= max_year:
     # save the year's word freqs as a csv ("checkpoint save")
     save_file_name = f'word_frequency_per_year_{year}.csv'
