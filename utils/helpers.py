@@ -40,6 +40,10 @@ def clean_string(string: str) -> str:
         string = re.sub(r'^-|-$', '', string)
         # remove individual forward and backward slashes '/', '\'
         string = re.sub(r'[\/\\]', '', string)
+        # remove double dashes '--'
+        string = string.replace('--', '-')
+        # remove the equal sign '='
+        string = string.replace('=', '')
         # at the end of the cleaning, remove all characters from the string which are not in the alphabet except for dash (compound words)
         remove_these = ''.join([str(c) for c in string if c != '-' and c not in [i for i in FINNISH_ALPHABET]])
         string = re.sub(remove_these, '', string)
