@@ -47,7 +47,6 @@ while year <= max_year:
         word_frequecy_per_year_df = pd.DataFrame(columns=['year', 'word', 'n']).astype({'year': int, 'word': str, 'n': int})
         # populate the df
         for k, v in word_frequency_dict.items():
-            #word_frequecy_per_year_df.loc[len(word_frequecy_per_year_df)] = {'year': year, 'word': k, 'n': v}
             word_frequecy_per_year_df = pd.concat([word_frequecy_per_year_df, pd.DataFrame.from_dict(data={'year': [year], 'word': [k], 'n': [v]}, orient='columns')], axis=0, ignore_index=True)
         # remove empty '' words from the dataset before saving as csv
         word_frequecy_per_year_df = word_frequecy_per_year_df[word_frequecy_per_year_df['word'].str.len() > 0]
