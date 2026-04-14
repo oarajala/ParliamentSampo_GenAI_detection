@@ -1,5 +1,6 @@
 # ParliamentSampo_GenAI_detection
 Attempts at detecting the use of GenAI from speeches stored in ParliamentSampo (Parlamenttisampo).
+2026-04-14: Note that this is an unfinished project. The project was abandoned once the analysis notebooks (project folder) could not reveal tangible evidence about the utilisation of LLMs in drafting speeches for plenary sessions in the Finnish Parliament. The project files are left in this repository as they currently are, and simply cloning this repo and pressing Play will not work. The repo is left here mostly as a future reference for myself.
 
 ## Project structure
 ```
