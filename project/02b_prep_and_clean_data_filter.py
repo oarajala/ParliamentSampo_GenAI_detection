@@ -2,7 +2,7 @@
 ## THIS IS TO CREATE FILES FOR ANALYSIS
 ## Files created in this script include files from /csv_lemmatized folder
 ## Files will be handled so that before their harder processing rows will be filtered by speech_type:
-## > keep categories where preparation is necessary: 'Esittelypuheenvuoro', 'Ryhmäpuheenvuoro', 'Varsinainen puheenvuoro'
+## > keep categories where preparation is necessary: 'Esittelypuheenvuoro', 'Ryhmäpuheenvuoro', 'Varsinainen puheenvuoro', 'Puheenvuoro'
 ## > Therefore: lemmatised content will be used.
 
 import pandas as pd
